@@ -19,7 +19,7 @@ logger = logging.getLogger("crawler_logger")
 google_adurl_regex = re.compile('adurl=(.*?)"')
 google_url_regex = re.compile('url\?q=(.*?)&amp;sa=')
 email_regex = re.compile(
-    '([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4})', re.IGNORECASE)
+    '([A-Z0-9._%+-]+@[A-Z0-9.-]+\.(?!(png|gif|jpg|jpeg|mov|mpeg|mpg|mp4))[A-Z]{2,4})', re.IGNORECASE)
 url_regex = re.compile('<a\s.*?href=[\'"](.*?)[\'"].*?>')
 # Below url_regex will run into 'Castrophic Backtracking'!
 # http://stackoverflow.com/questions/8010005/python-re-infinite-execution
@@ -73,14 +73,15 @@ def crawl(keywords):
     # Google search results are paged with 10 urls each. There are also adurls
     for page_index in range(0, MAX_SEARCH_RESULTS, 10):
         query = {'q': keywords}
-        url = 'http://www.google.com/search?' + \
+        url = 'https://www.google.com/search?' + \
             urllib.urlencode(query) + '&start=' + str(page_index)
         data = retrieve_html(url)
         # 	print("data: \n%s" % data)
-        for url in google_url_regex.findall(data):
-            db.enqueue(unicode(url))
-        for url in google_adurl_regex.findall(data):
-            db.enqueue(unicode(url))
+        if data:
+            for url in google_url_regex.findall(data):
+                db.enqueue(unicode(url))
+            for url in google_adurl_regex.findall(data):
+                db.enqueue(unicode(url))
 
     # Step 2: Crawl each of the search result
     # We search till level 2 deep
@@ -90,7 +91,6 @@ def crawl(keywords):
         if (uncrawled == False):
             logger.info('No more webpages to crawl')
             save_emails()
-            save_domains()
             break
         email_set = find_emails_2_level_deep(uncrawled.url)
         if (len(email_set) > 0):
@@ -202,6 +202,9 @@ def find_emails_in_html(html):
         return set()
     email_set = set()
     for email in email_regex.findall(html):
+        if type(email) == tuple:
+            logger.info(str(email) + ' --> ' + email[0])
+            email = email[0]
         if email[email.index('@')+1:email.rfind('.')].lower() not in emails_blacklist:
             email_set.add(email)
     return email_set
@@ -253,7 +256,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.error("Stopping (KeyboardInterrupt)")
         save_emails()
-        save_domains()
         sys.exit()
     except Exception, e:
         logger.error("EXCEPTION: %s " % e)
