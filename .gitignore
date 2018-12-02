@@ -1,6 +1,7 @@
 *.py[co]
 
 # Project specifics
+.vscode
 email_crawler.sublime-project
 email_crawler.sublime-workspace
 
