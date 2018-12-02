@@ -1,4 +1,4 @@
-from settings import LOGGING, DOMAINS_BLACKLIST
+from settings import LOGGING
 import logging
 import logging.config
 import urllib
@@ -30,6 +30,15 @@ MAX_SEARCH_RESULTS = 150
 
 EMAILS_FILENAME = 'data/emails.csv'
 DOMAINS_FILENAME = 'data/domains.csv'
+EMAIL_DOMAINS_BLACKLIST = 'blacklisted_email_domains.txt'
+
+emails_blacklist = []
+# Read blacklist email domains
+try:
+    emails_blacklist = open(EMAIL_DOMAINS_BLACKLIST,
+                            'r').read().splitlines()
+except Exception, e:
+    logger.error("Couldn't read blackslited email domains")
 
 # Set up the database
 db = CrawlerDb()
@@ -121,7 +130,9 @@ def get_new_file(filename):
     new_filename = filename
     counter = 1
     while os.path.isfile(new_filename):
-        new_filename = "{}_{}.csv".format(new_filename[:-4], counter)
+        new_filename = "{}_{}.csv".format(
+            new_filename[:(-4 if '_' not in new_filename else new_filename.index('_'))], counter)
+        counter += 1
     return new_filename
 
 
@@ -138,10 +149,10 @@ def retrieve_html(url):
     try:
         logger.info("Crawling %s" % url)
         request = urllib2.urlopen(req)
-    except urllib2.URLError, e:
-        logger.error("Exception at url: %s\n%s" % (url, e))
     except urllib2.HTTPError, e:
         status = e.code
+    except urllib2.URLError, e:
+        logger.error("Exception at url: %s\n%s" % (url, e))
     except Exception, e:
         return
     if status == 0:
@@ -191,7 +202,7 @@ def find_emails_in_html(html):
         return set()
     email_set = set()
     for email in email_regex.findall(html):
-        if email[email.index('@')+1:email.rfind('.')].lower() not in DOMAINS_BLACKLIST:
+        if email[email.index('@')+1:email.rfind('.')].lower() not in emails_blacklist:
             email_set.add(email)
     return email_set
 

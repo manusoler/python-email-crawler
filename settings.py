@@ -3,8 +3,6 @@ import logging
 DEBUG = True 				# Whether or not to show DEBUG level messages
 USE_COLORS = True 			# Whether or not colors should be used when outputting text
 REMOVE_DDBB = True			# Whether or not remove existing ddbb when starting
-DOMAINS_BLACKLIST = [		# Email domains that won't be included in the result
-]
 
 LOGGING = {						# dictConfig for output stream and file logging
     'version': 1,
