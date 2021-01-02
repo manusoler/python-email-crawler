@@ -33,5 +33,5 @@ pip-log.txt
 
 docs/_build/
 crawler.sqlite
-pycrawler.log
-emails.csv
+*.log
+*.csv
